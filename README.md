@@ -1,4 +1,4 @@
-# Parametric EQ – Farina Sweep Measurement and Analysis
+# Automatic frequency response analysis and parametric EQ generation for in room speakers
 
 This project implements a full end-to-end parametric equalizer measurement system in both **Android (Java/Kotlin + C++/JNI)** and **Python**, demonstrating cross-platform DSP skills and practical audio engineering workflows.
 
