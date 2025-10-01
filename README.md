@@ -1,107 +1,109 @@
-# Parametric Equalizer (ECE420 Final Project)
+# Parametric EQ – Farina Sweep Measurement and Analysis
 
-## Overview  
-This project was developed as the final project for **ECE420: Digital Signal Processing Laboratory** at the University of Illinois Urbana–Champaign.  
-
-The application records live audio on an Android device, saves it as a `.wav` file, and applies **real-time parametric equalization** with optional **AutoEQ filter generation** for headphone and speaker compensation.  
-
-This project demonstrates the integration of multiple software layers and cross-domain expertise in **DSP, mobile development, and systems integration**:  
-- **Android UI (Java/XML)**: Activity lifecycle, file handling, and user interface control.  
-- **Native DSP (C++/NDK)**: Low-latency digital filter processing with IIR biquads.  
-- **Python (Chaquopy integration)**: AutoEQ and scientific computation stack (NumPy, SciPy, Matplotlib).  
-- **Systems Integration**: JNI bridging, Gradle and Chaquopy dependency management, ABI compatibility, and cross-language debugging.  
+This project implements a full end-to-end parametric equalizer measurement system in both **Android (Java/Kotlin + C++/JNI)** and **Python**, demonstrating cross-platform DSP skills and practical audio engineering workflows.
 
 ---
 
-## Key Features
-- **Live Audio Recording**: Captures microphone input and stores high-quality `.wav` files.  
-- **Real-Time Equalization**: Implements parametric EQ using biquad filters in a C++ DSP engine.  
-- **AutoEQ Integration**:  
-  - Executes on-device via Python using the Chaquopy framework.  
-  - Generates parametric EQ filters for specific headphones or speakers.  
-  - Applies correction curves seamlessly to the playback pipeline.  
-- **Cross-Language Architecture**:  
-  - Java for Android lifecycle and UI.  
-  - JNI bridge to C++ for real-time DSP.  
-  - Python for AutoEQ filter design and analysis.  
+## Android Implementation
+
+The Android app provides an on-device measurement pipeline that records Farina sweeps through the device microphone, processes the recordings natively in C++ (via JNI + KissFFT), and visualizes frequency responses relative to target curves.
+
+### Key Features
+- **Audio Recording**: Capture multi-sweep recordings directly on Android devices.
+- **Native DSP (C++ with JNI)**:
+  - Farina exponential sweep generation and inverse filter computation
+  - Marker-based segmentation and multi-sweep detection
+  - FFT-based deconvolution (using KissFFT) to extract impulse responses
+  - Frequency response computation (0–20 kHz), normalized at 1 kHz
+  - Averaging across multiple sweeps for robust measurements
+- **Graphing and Visualization**:
+  - Logarithmic x-axis (20 Hz – 20 kHz)
+  - y-axis constrained to –20 dB to +20 dB
+  - Overlay with pre-defined target EQ curves
+- **Multi-Target Curves**: Preloaded frequency response curves (e.g., Harman) selectable in the UI.
+- **JNI Integration**:
+  - `dsp_native.cpp/h` handles DSP pipeline
+  - `DSPProcessor.java` bridges native code to the Android UI
+  - `DataStore.java` handles WAV parsing and array conversions
+
+### Technical Highlights
+- **Android Audio + JNI Integration**: Managed real-time buffers between Java and C++.
+- **KissFFT on Android**: Integrated KissFFT for efficient FFT/IFFT on mobile platforms.
+- **Signal Processing Pipeline**:
+  - Sweep → Inverse filter → Deconvolution → Impulse response → FFT → FR averaging
+- **Robustness**:
+  - Multiple sweeps segmented and averaged to reduce noise
+  - Processing tested against Python reference implementation for validation
 
 ---
 
-## Technical Highlights
+## Python Reference Implementation
 
-### Android (Java/XML)  
-- Built with `AudioRecord` for raw PCM capture.  
-- Manages runtime permissions (`RECORD_AUDIO`, storage).  
-- Handles activity lifecycle gracefully (`onPause`, `onStop`, `onDestroy`) to release audio resources.  
+The project includes a full Python reference implementation of the Farina sweep measurement and analysis pipeline. This served as the **prototype and validation tool** for the Android port.
 
-### DSP Core (C++ with NDK)  
-- Implements biquad IIR filters for parametric EQ.  
-- Optimized for low-latency execution on ARM-based processors.  
-- Compiled with CMake and Android NDK to support multiple ABIs (`arm64-v8a`, `x86`, `armeabi-v7a`).  
+### Python Features
+- **Sweep & Inverse Filter Generation** using NumPy
+- **Marker-based Segmentation** with `scipy.signal.fftconvolve` and `find_peaks`
+- **Deconvolution** using inverse filter and FFT convolution
+- **Frequency Response Estimation** via FFT (`numpy.fft.rfft`)
+- **Optional Smoothing** using Savitzky–Golay filtering
+- **Target Curve Comparison** with CSV-loaded curves
+- **Visualization** with Matplotlib (semilogx scaling)
 
-### Python Integration (Chaquopy)  
-- Integrated scientific stack: **NumPy, SciPy, Pandas, Matplotlib**.  
-- AutoEQ v4.1.2 included for automatic filter generation.  
-- Filter coefficients generated in Python and passed into the native DSP engine.  
-- Resolved missing dependencies and `.so` libraries (`libopenblas.so`, `libgfortran.so`, `libjpeg_chaquopy.so`) through manual wheel analysis and dependency patching.  
-- Demonstrated expertise in ABI handling and library debugging within a constrained Android environment.  
+### Example Workflow
+1. Play back generated sweep through headphones/speakers.
+2. Record response with a microphone.
+3. Segment multiple sweeps using 1 kHz marker beeps.
+4. Deconvolve sweeps, normalize, and average impulse responses.
+5. Plot measured vs. target frequency response (log-scaled).
+
+This implementation ensured mathematical correctness and validated Android results.
 
 ---
 
 ## Skills Demonstrated
-- **Digital Signal Processing**: Real-time IIR parametric EQ design and implementation.  
-- **Cross-Language Development**: Seamless integration of Java, C++, and Python in a single Android app.  
-- **System-Level Debugging**:  
-  - Resolved Gradle and Chaquopy dependency mismatches.  
-  - Identified and patched missing shared libraries in Android builds.  
-  - Managed multi-architecture NDK builds.  
-  - Debugged runtime loading errors (`dlopen` failures).  
-- **Mobile Systems Engineering**: Designed a complete pipeline from user interface → DSP engine → AutoEQ integration.  
-- **Engineering Trade-offs**: Evaluated spectrogram visualization but prioritized AutoEQ integration to maximize DSP impact.  
+
+- **Digital Signal Processing**: Convolution, FFT/IFFT, windowing, impulse response analysis.
+- **Cross-Platform Development**: Translating Python/Numpy + SciPy logic into C++ (KissFFT) on Android.
+- **JNI / NDK**: Integrating high-performance native DSP into an Android application.
+- **Systems Design**: Building a reliable pipeline from raw audio recording → processing → visualization.
+- **Audio Engineering**: Designing repeatable sweep measurement methods (multi-sweep averaging, 1 kHz normalization).
+- **Practical Debugging**: Solved challenges in buffer alignment, FFT normalization, segmentation accuracy, and Android CMake builds.
 
 ---
 
-## Project Structure
 
-app/src/main/java/com/ece420_parametric_eq/
-│   start_page.java          # Recording and navigation logic
-│   ProcessActivity.java     # EQ application and AutoEQ processing
-│   DSPProcessor.java        # JNI bridge for C++ DSP
+## Repository Structure
+```
+.
+├── android-app/
+│   ├── java/com/ece420/parametric_eq/
+│   │   ├── ProcessActivity.java
+│   │   ├── DSPProcessor.java
+│   │   ├── DataStore.java
+│   ├── cpp/
+│   │   ├── dsp_native.cpp
+│   │   ├── dsp_native.h
+│   │   └── kiss_fft/   # FFT engine
+│   ├── res/layout/
+│   │   └── activity_process.xml
+│   └── CMakeLists.txt
 │
-app/src/main/cpp/
-│   dsp_native.cpp           # Core DSP (biquad filters, EQ engine)
-│
-app/src/main/python/
-│   autoeq_wrapper.py        # Runs AutoEQ and passes filters to Android
-│
-res/layout/
-│   start_page.xml           # Android layout definitions
----
-
-## Lessons Learned
-- Achieving **low-latency DSP** on mobile requires careful design and native implementation.  
-- Python integration on Android requires navigating **complex ABI and dependency mismatches**.  
-- JNI bridging, while powerful, requires careful management of memory and thread safety.  
-- Engineering trade-offs between visualization features and real-time DSP performance are critical in mobile DSP applications.  
-
----
-
-## Context
-This project was completed as the **capstone final project** for **ECE420** at UIUC. It highlights:  
-- Practical application of DSP theory in a mobile environment.  
-- Real-world system integration across multiple languages.  
-- Application of open-source DSP research tools (AutoEQ) into embedded/mobile contexts.  
-
+├── python-reference/
+│   ├── farina_processing.py
+│   ├── Harmon.csv
+│   └── example_recordings/
+```
 ---
 
 ## Future Work
-- Add real-time visualization (spectrograms, frequency response).  
-- Extend equalization to multiband presets and user-defined profiles.  
-- Package as a publicly available Android app.  
+
+- **On-device smoothing**: Implement Savitzky–Golay smoothing directly in C++.
+- **Parametric EQ Application**: Apply calculated EQ filters in real time to audio playback.
+- **UI Enhancements**: Add live histogram in android implementation.
 
 ---
 
-## Author
-**Josh Jenks**  
-Computer Engineering, University of Illinois Urbana–Champaign  
-Focus: Embedded Systems, DSP, and Android Development  
+## Summary
+
+This project demonstrates end-to-end DSP pipeline development, beginning with a **Python prototype** and culminating in a **fully functional Android app** with native C++ processing. It highlights skills in DSP, cross-platform implementation, embedded math libraries, and mobile software integration — all validated against reference data.
