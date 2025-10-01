@@ -62,6 +62,7 @@ This project demonstrates the integration of multiple software layers and cross-
 ---
 
 ## Project Structure
+
 app/src/main/java/com/ece420_parametric_eq/
 │   start_page.java          # Recording and navigation logic
 │   ProcessActivity.java     # EQ application and AutoEQ processing
